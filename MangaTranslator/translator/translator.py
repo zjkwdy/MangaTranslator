@@ -46,3 +46,4 @@ class Translator:
                 task.status_str = msg['status']
             if msg['type'] == 'result':
                 task.success(msg['result']['translation_mask'])
+                break

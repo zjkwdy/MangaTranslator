@@ -26,6 +26,12 @@ async def WS_WAIT_JSON(path):
         aws = ws.manipulator
         while True:
             try:
-                yield __json_loads(await aws.receive(text=True))
-            except:
+                s=await aws.receive(text=True)
+                if s is not None:
+                    yield __json_loads(s)
+            except UnicodeDecodeError as e:
+                if b'Done' in s:
+                    break
+            except Exception as e:
+                print('uncought error',e)
                 break
