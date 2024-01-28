@@ -94,6 +94,7 @@ async def main():
     print('All Done')
     print('delete session file...')
     session.delete()
+    input('press any key to quit')
         
 
 asyncio.run(main())

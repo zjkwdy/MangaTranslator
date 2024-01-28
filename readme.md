@@ -24,7 +24,7 @@ cp xxxxx input/
 跑起来!
 
 ```
-python translate_all.py
+while true ;do python translate_all.py ;done #忽略所有崩溃,一直跑到完活
 ```
 
 
