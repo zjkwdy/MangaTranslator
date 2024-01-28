@@ -1,6 +1,9 @@
 from MangaTranslator.utils.request import GET
 from MangaTranslator.utils.imageutil import image_from_bytes,image_from_file,mix_images
 from MangaTranslator.utils.fileutil import link_path,mkdirs
+from MangaTranslator.utils.encoding import sb64enc
+
+from MangaTranslator.translator.feature_enumerations import *
 
 class TranslateTask:
     

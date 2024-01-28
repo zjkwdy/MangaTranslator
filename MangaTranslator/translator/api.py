@@ -1,13 +1,14 @@
 from MangaTranslator.utils.request import PUT,WS_WAIT_JSON
+from MangaTranslator.translator.feature_enumerations import *
 
 def task_upload(
         file: bytes,
         mime: str,
-        target_language,
-        detector,
-        direction,
-        translator,
-        size
+        target_language:TargetLanguages,
+        detector:TextDetectors,
+        direction:TextDirections,
+        translator:TranslatorBackends,
+        size:TextDirections
     ):
     
     """
@@ -26,11 +27,11 @@ def task_upload(
         },
         data={
             'mime':mime,
-            'target_language':target_language,
-            'detector':detector,
-            'direction':direction,
-            'translator':translator,
-            'size':size
+            'target_language':target_language.value,
+            'detector':detector.value,
+            'direction':direction.value,
+            'translator':translator.value,
+            'size':size.value
         }
     )
     return req.json()

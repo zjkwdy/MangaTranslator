@@ -2,3 +2,6 @@ venv
 input
 result
 **/__pycache__
+*.session
+**/*.zip
+**/*.rar

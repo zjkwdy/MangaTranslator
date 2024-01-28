@@ -1,16 +1,18 @@
 from .api import task_upload,preserve_task
 from MangaTranslator.utils.fileutil import guess_mime,read_bytes
+from MangaTranslator.utils.encoding import sb64enc
 from .task import TranslateTask
+from .feature_enumerations import *
 
 class Translator:
 
     def __init__(
         self,
-        target_language,
-        detector,
-        direction,
-        translator,
-        size
+        target_language:TargetLanguages,
+        detector:TextDetectors,
+        direction:TextDirections,
+        translator:TranslatorBackends,
+        size:TextDirections
     ) -> None:
         self.target_language = target_language
         self.detector = detector
@@ -18,6 +20,18 @@ class Translator:
         self.translator  = translator
         self.size = size
     
+    def generate_inner_id(self):
+        #区别一次会话
+        return sb64enc("{lang}@{det}@{dir}@{tran}@{size}".format_map(
+            {
+                'lang':self.target_language.value,
+                'det':self.detector.value,
+                'dir':self.direction.value,
+                'tran':self.translator.value,
+                'size':self.size.value
+            }
+        ))
+
     def new_task(self,file_path):
         print(f'Uploading {file_path}...')
         j = task_upload(
