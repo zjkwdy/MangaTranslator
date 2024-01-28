@@ -41,7 +41,6 @@ class TextDirections(StrEnum):
     Auto="auto"
     Horizontal="h"
     Vertical="v"
-    px2560="X"
 
 @unique
 class TranslatorBackends(StrEnum):
