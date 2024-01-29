@@ -11,7 +11,6 @@ from MangaTranslator import (
 
 from session import Session
 
-from time import sleep
 from glob import glob
 
 import asyncio
@@ -21,7 +20,7 @@ INPUT_DIR = 'input' #输入文件夹
 RESULT_DIR = 'result'  #输出文件夹(自动创建)
 
 #翻译器设定
-TARGET_LANGUAGE=TargetLanguages.Chinese_Simplified
+TARGET_LANGUAGE=TargetLanguages.English
 TRANS_DETECTOR=TextDetectors.Default
 TRANS_DIRECTION=TextDirections.Default
 TRANS_TRANSLATOR=TranslatorBackends.GPT35
@@ -33,6 +32,15 @@ WORKERS_DOWNLOAD=10
 
 # --------------------- ENDCONFIG ---------------------
 
+file_list = sorted(
+    glob(
+        pathname=f'{INPUT_DIR}/**/*[jpg,png]',
+        recursive=True
+    )
+)
+
+file_count = len(file_list)
+
 translator=Translator(
     target_language=TARGET_LANGUAGE,
     detector=TRANS_DETECTOR,
@@ -43,13 +51,21 @@ translator=Translator(
 
 session = Session(translator=translator)
 
+class jumpOut(Exception):
+    ...
+
 def push_task(file_path) -> TranslateTask:
-    if id_status:=session.get_task(file_path):
-        id,status = id_status.split('@')
-        t = TranslateTask(id,file_path)
-        if status.strip()=='1':
-            t.success(f'https://r2.cotrans.touhou.ai/mask/{t.id}.png')
-        return t
+    try:
+        if id_status:=session.get_task(file_path):
+            id,status = id_status.split('@')
+            if id == 'None':
+                raise jumpOut("not a valid id")
+            t = TranslateTask(id,file_path)
+            if status.strip()=='1':
+                t.success(f'https://r2.cotrans.touhou.ai/mask/{t.id}.png')
+            return t
+    except Exception:
+        ...
     t=translator.new_task(file_path)
     session.add_task(t)
     return t
@@ -58,32 +74,31 @@ def save_img(task:TranslateTask):
     task.save(RESULT_DIR)
 
 async def main():
-    print('Start Translate...')
+    # print('Start Translate...')
     print('Start to upload Images')
-    
     task_list:list[TranslateTask]=[]
 
     with Pool(processes=WORKERS_UPLOAD) as tp:
         task_list=tp.map(
             push_task,
-            sorted(
-        glob(
-                pathname=f'{INPUT_DIR}/**/*[jpg,png]',
-                recursive=True
-            ))
+            file_list
         )
         tp.close()
         tp.join()
 
     print('All upload Success!')
-    for t in task_list:
-        await translator.preserve_task(t)
-        if t.server_finished:
-            session.add_task(t)
+    unfinished_tasks=[t for t in task_list if not t.client_finished]
     
-    while not all([t.client_finished for t in task_list]):
-        sleep(1)
-    
+    while len(unfinished_tasks:=[t for t in unfinished_tasks if not t.client_finished]) > 0:
+        print(f'find {len(unfinished_tasks)} unfinished task(s),wait them...')
+        for ut in unfinished_tasks:
+            print(f'waitinf for task {ut.id} o={ut.original_file_path}')
+            await translator.preserve_task(ut)
+            if ut.client_finished:
+                session.add_task(ut)
+            elif ut.error_retries >= 3:
+                #失败过多直接跳过!,用1x1图片盖住()
+                ut.success('https://i0.hdslb.com/bfs/bangumi/94466dbf154b7da5fa0f1f20dae476efe8892368.jpg@1w_1h.png')
     print('Saving Images...')
     with Pool(processes=WORKERS_DOWNLOAD) as tp:
         tp.map(
@@ -92,8 +107,8 @@ async def main():
         )
 
     print('All Done')
-    print('delete session file...')
-    session.delete()
+    # print('delete session file...')
+    # session.delete()
     input('press any key to quit')
         
 

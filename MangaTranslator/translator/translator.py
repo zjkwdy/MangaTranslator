@@ -33,7 +33,7 @@ class Translator:
         ))
 
     def new_task(self,file_path):
-        print(f'Uploading {file_path}...')
+        # print(f'Uploading {file_path}...')
         j = task_upload(
             file=read_bytes(file_path),
             mime=guess_mime(file_path),
@@ -51,13 +51,21 @@ class Translator:
             task.success(j['result']['translation_mask'])
         
         return task
-    async def preserve_task(self,task:TranslateTask):
+    async def preserve_task(self,task:TranslateTask,wait_pending=False):
+        """等待任务完成,如果还在排队/已经完成则直接返回,拉取失败则调用task.error()"""
+
         if task.server_finished:
             return
+        
         c = preserve_task(task_id=task.id)
         async for msg in c:
             if msg['type'] == 'status':
                 task.status_str = msg['status']
+                if task.status_str == 'pending' and not wait_pending:
+                    return
+            if msg['type'] == 'error':
+                task.error()
+                break
             if msg['type'] == 'result':
                 task.success(msg['result']['translation_mask'])
                 break

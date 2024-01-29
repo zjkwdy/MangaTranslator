@@ -1,7 +1,6 @@
 from MangaTranslator.utils.request import GET
 from MangaTranslator.utils.imageutil import image_from_bytes,image_from_file,mix_images
 from MangaTranslator.utils.fileutil import link_path,mkdirs
-from MangaTranslator.utils.encoding import sb64enc
 
 from MangaTranslator.translator.feature_enumerations import *
 
@@ -10,6 +9,8 @@ class TranslateTask:
     server_finished:bool = False
     client_finished:bool = False
     
+    error_retries = 0
+
     __status_str__: str
     result_mask_url:str 
     original_file_path:str
@@ -33,7 +34,11 @@ class TranslateTask:
         self.result_mask_url=result_mask_url
         self.status_str='Server finished'
         self.client_finished = True
-        
+    
+    def error(self):
+        #在无法拉取任务信息时调用
+        self.error_retries+=1
+        self.status_str = f'{self.error_retries} error(s)'
     
     def save(self,dir):
         self.status_str = 'Downloading'

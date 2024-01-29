@@ -20,18 +20,29 @@ GET = __session__.get
 
 async def WS_WAIT_JSON(path):
     """path: foo/bar"""
-    async with AioWebSocket(
-        f'wss://{backend_host}/{path}',
-    ) as ws:
-        aws = ws.manipulator
-        while True:
-            try:
-                s=await aws.receive(text=True)
-                if s is not None:
-                    yield __json_loads(s)
-            except UnicodeDecodeError as e:
-                if b'Done' in s:
+    try:
+        async with AioWebSocket(
+            f'wss://{backend_host}/{path}',
+            timeout=10
+        ) as ws:
+            aws = ws.manipulator
+            while True:
+                try:
+                    s=await aws.receive(text=True)
+                    if s is not None:
+                        yield __json_loads(s)
+                except UnicodeDecodeError as e:
+                    if b'Done' in s:
+                        break
+                except Exception as e:
+                    yield {
+                        'type': 'error',
+                        'status':f'client error {e}'
+                    }
                     break
-            except Exception as e:
-                print('uncought error',e)
-                break
+    except Exception as e:
+        yield {
+            'type': 'error',
+            'status':f'client error {e}'
+        }
+        return

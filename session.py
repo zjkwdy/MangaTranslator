@@ -8,7 +8,7 @@ from threading import Lock
 #记录上传过的本地id
 class Session:
 
-    task_map:dict[str,str] #{b64path:id}
+    task_map:dict[str,str] #{b64path:"taskid@status"}
     write_lock:Lock
     session_file:str
 
@@ -19,7 +19,7 @@ class Session:
         self.session_file = f'.translate-{translator.generate_inner_id()}.session'
         mode = 'r+' if exists(self.session_file) else 'w+'
         self.__session_fp__=open(self.session_file,mode=mode)
-        self.task_map={(x:=self.__decode_line__(line))[0]:x[1] for line in self.__session_fp__.readlines()}
+        self.task_map={(x:=self.__decode_line__(line.strip()))[0]:x[1] for line in self.__session_fp__.readlines()}
         self.write_lock=Lock()
 
     def __decode_line__(self,line:str):
