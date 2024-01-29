@@ -1,5 +1,6 @@
-from MangaTranslator.utils.request import PUT,WS_WAIT_JSON
+from MangaTranslator.utils.request import PUT,ws_connect
 from MangaTranslator.translator.feature_enumerations import *
+from MangaTranslator.utils.encoding import jsondec
 
 def task_upload(
         file: bytes,
@@ -42,5 +43,19 @@ def task_upload(
     }
     """
 
-def preserve_task(task_id):
-    return WS_WAIT_JSON(f'task/{task_id}/event/v1')
+async def preserve_task(task_id):
+    try:
+        ws_chn = ws_connect(f'task/{task_id}/event/v1')
+        async for msg in ws_chn:
+            try:
+                if msg is not None:
+                    yield jsondec(msg)
+            except UnicodeDecodeError as e:
+                if b'Done' in msg:
+                    break
+    except Exception as e:
+        yield {
+            'type': 'error',
+            'status':f'client error {e}'
+        }
+        return

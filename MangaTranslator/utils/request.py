@@ -1,6 +1,5 @@
 from httpx import Client
 from aiowebsocket.converses import AioWebSocket
-from json import loads as __json_loads
 
 backend_host = "api.cotrans.touhou.ai"
 
@@ -18,31 +17,14 @@ __session__ = Client(
 PUT = __session__.put
 GET = __session__.get  
 
-async def WS_WAIT_JSON(path):
+async def ws_connect(path):
     """path: foo/bar"""
-    try:
-        async with AioWebSocket(
-            f'wss://{backend_host}/{path}',
-            timeout=10
-        ) as ws:
-            aws = ws.manipulator
-            while True:
-                try:
-                    s=await aws.receive(text=True)
-                    if s is not None:
-                        yield __json_loads(s)
-                except UnicodeDecodeError as e:
-                    if b'Done' in s:
-                        break
-                except Exception as e:
-                    yield {
-                        'type': 'error',
-                        'status':f'client error {e}'
-                    }
-                    break
-    except Exception as e:
-        yield {
-            'type': 'error',
-            'status':f'client error {e}'
-        }
-        return
+    
+    async with AioWebSocket(
+        f'wss://{backend_host}/{path}',
+        timeout=10
+    ) as ws:
+        aws = ws.manipulator
+        while True:
+            yield await aws.receive(text=True)
+    
