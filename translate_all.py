@@ -20,7 +20,7 @@ INPUT_DIR = 'input' #输入文件夹
 RESULT_DIR = 'result'  #输出文件夹(自动创建)
 
 #翻译器设定
-TARGET_LANGUAGE=TargetLanguages.English
+TARGET_LANGUAGE=TargetLanguages.Chinese_Simplified
 TRANS_DETECTOR=TextDetectors.Default
 TRANS_DIRECTION=TextDirections.Default
 TRANS_TRANSLATOR=TranslatorBackends.GPT35
