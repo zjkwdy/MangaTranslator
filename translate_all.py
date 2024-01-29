@@ -92,7 +92,7 @@ async def main():
     while len(unfinished_tasks:=[t for t in unfinished_tasks if not t.client_finished]) > 0:
         print(f'find {len(unfinished_tasks)} unfinished task(s),wait them...')
         for ut in unfinished_tasks:
-            print(f'waitinf for task {ut.id} o={ut.original_file_path}')
+            print(f'waiting for task {ut.id} o={ut.original_file_path}')
             await translator.preserve_task(ut)
             if ut.client_finished:
                 session.add_task(ut)
