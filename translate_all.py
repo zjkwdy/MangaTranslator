@@ -23,12 +23,13 @@ RESULT_DIR = 'result'  #输出文件夹(自动创建)
 TARGET_LANGUAGE=TargetLanguages.Chinese_Simplified
 TRANS_DETECTOR=TextDetectors.Default
 TRANS_DIRECTION=TextDirections.Default
-TRANS_TRANSLATOR=TranslatorBackends.GPT35
+TRANS_TRANSLATOR=TranslatorBackends.Google
 TRANS_SIZE=DetectionSizes.px2560
 
 #上传下载线程数量
 WORKERS_UPLOAD=10
 WORKERS_DOWNLOAD=10
+WORKERS_WAIT=3
 
 # --------------------- ENDCONFIG ---------------------
 
@@ -73,6 +74,18 @@ def push_task(file_path) -> TranslateTask:
 def save_img(task:TranslateTask):
     task.save(RESULT_DIR)
 
+WAIT_SEM = asyncio.Semaphore(WORKERS_WAIT)
+
+async def wait_task(task:TranslateTask):
+    async with WAIT_SEM:    #控制并发
+        print(f'waiting for task {task.id} o={task.original_file_path}')
+        await translator.preserve_task(task)
+        if task.client_finished:
+                session.add_task(task)
+        elif task.error_retries >= 3:
+            #失败过多直接跳过!,用1x1图片盖住()
+            task.success('https://i0.hdslb.com/bfs/bangumi/94466dbf154b7da5fa0f1f20dae476efe8892368.jpg@1w_1h.png')
+
 async def main():
     # print('Start Translate...')
     print('Start to upload Images')
@@ -91,14 +104,10 @@ async def main():
     
     while len(unfinished_tasks:=[t for t in unfinished_tasks if not t.client_finished]) > 0:
         print(f'find {len(unfinished_tasks)} unfinished task(s),wait them...')
-        for ut in unfinished_tasks:
-            print(f'waiting for task {ut.id} o={ut.original_file_path}')
-            await translator.preserve_task(ut)
-            if ut.client_finished:
-                session.add_task(ut)
-            elif ut.error_retries >= 3:
-                #失败过多直接跳过!,用1x1图片盖住()
-                ut.success('https://i0.hdslb.com/bfs/bangumi/94466dbf154b7da5fa0f1f20dae476efe8892368.jpg@1w_1h.png')
+        await asyncio.gather(*[
+            asyncio.create_task(wait_task(ut)) 
+            for ut in unfinished_tasks
+        ])
     print('Saving Images...')
     with Pool(processes=WORKERS_DOWNLOAD) as tp:
         tp.map(
