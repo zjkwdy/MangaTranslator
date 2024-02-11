@@ -23,7 +23,7 @@ RESULT_DIR = 'result'  #输出文件夹(自动创建)
 TARGET_LANGUAGE=TargetLanguages.Chinese_Simplified
 TRANS_DETECTOR=TextDetectors.Default
 TRANS_DIRECTION=TextDirections.Default
-TRANS_TRANSLATOR=TranslatorBackends.Google
+TRANS_TRANSLATOR=TranslatorBackends.GPT35
 TRANS_SIZE=DetectionSizes.px2560
 
 #上传下载线程数量
